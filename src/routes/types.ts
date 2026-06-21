@@ -11,11 +11,11 @@ export type AuthStackParamList = {
 };
 
 export type AppTabParamList = {
-  HomeTab: undefined;
+  Home: undefined;
   Search: undefined;
   Inbox: undefined;
   Profile: undefined;
-  Setting: undefined;
+  Settings: undefined;
 };
 
 export type AppStackParamList = {

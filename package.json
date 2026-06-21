@@ -12,6 +12,7 @@
   "dependencies": {
     "@apollo/client": "^4.2.3",
     "@gorhom/bottom-sheet": "^5.2.14",
+    "@react-native-vector-icons/common": "^13.0.1",
     "@react-native-vector-icons/fontawesome6": "^13.1.2",
     "@react-native-vector-icons/ionicons": "^13.1.2",
     "@react-native-vector-icons/material-design-icons": "^13.1.2",

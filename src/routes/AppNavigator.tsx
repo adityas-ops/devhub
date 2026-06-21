@@ -1,7 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Ionicons, {
+  IoniconsIconName,
+} from '@react-native-vector-icons/ionicons/static';
 import { AppStackParamList, AppTabParamList } from './types';
 
 // Import Screens
@@ -20,43 +23,45 @@ function TabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#3b82f6', // Blue 500
-        tabBarInactiveTintColor: '#94a3b8', // Slate 400
-        tabBarStyle: {
-          backgroundColor: '#1e293b', // Slate 800
-          borderTopColor: '#334155',
-          height: 64,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarIcon: ({ color, focused }) => {
-          let label = '';
+        tabBarActiveTintColor: '#0f172a', // Slate 900 (Dark Gray / Black)
+        tabBarInactiveTintColor: '#94a3b8', // Slate 400 (Light Gray)
+        tabBarStyle: styles.tabBar,
+        tabBarLabelStyle: styles.tabBarLabel,
+        tabBarIcon: ({ color, focused, size }) => {
+          let iconName: IoniconsIconName = 'home';
           switch (route.name) {
-            case 'HomeTab':
-              label = '🏠';
+            case 'Home':
+              iconName = focused ? 'home' : 'home-outline';
               break;
             case 'Search':
-              label = '🔍';
+              iconName = focused ? 'search' : 'search-outline';
               break;
             case 'Inbox':
-              label = '📥';
+              iconName = focused ? 'notifications' : 'notifications-outline';
               break;
             case 'Profile':
-              label = '👤';
+              iconName = focused ? 'person' : 'person-outline';
               break;
-            case 'Setting':
-              label = '⚙️';
+            case 'Settings':
+              iconName = focused ? 'settings' : 'settings-outline';
               break;
           }
-          return <Text style={{ fontSize: 20, color }}>{label}</Text>;
+          return <Ionicons name={iconName} size={size || 24} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="HomeTab" component={Home} options={{ tabBarLabel: 'Home' }} />
+      <Tab.Screen name="Home" component={Home} />
       <Tab.Screen name="Search" component={Search} />
-      <Tab.Screen name="Inbox" component={Inbox} />
+      <Tab.Screen
+        name="Inbox"
+        component={Inbox}
+        options={{
+          tabBarBadge: '',
+          tabBarBadgeStyle: styles.badgeStyle,
+        }}
+      />
       <Tab.Screen name="Profile" component={Profile} />
-      <Tab.Screen name="Setting" component={Setting} />
+      <Tab.Screen name="Settings" component={Setting} />
     </Tab.Navigator>
   );
 }
@@ -86,3 +91,27 @@ export default function AppNavigator() {
     </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: '#ffffff', // White background matching screenshot
+    borderTopColor: '#f1f5f9', // Very light gray border top
+    borderTopWidth: 1,
+    height: 68,
+    paddingBottom: 10,
+    paddingTop: 8,
+  },
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  badgeStyle: {
+    backgroundColor: '#ea580c', // Orange badge dot matching screenshot
+    minWidth: 8,
+    maxWidth: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 4,
+  },
+});
