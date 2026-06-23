@@ -23,8 +23,8 @@ function TabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#0f172a', // Slate 900 (Dark Gray / Black)
-        tabBarInactiveTintColor: '#94a3b8', // Slate 400 (Light Gray)
+        tabBarActiveTintColor: '#0f172a',
+        tabBarInactiveTintColor: '#94a3b8',
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarIcon: ({ color, focused, size }) => {
@@ -50,18 +50,43 @@ function TabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={Home} />
-      <Tab.Screen name="Search" component={Search} />
+      <Tab.Screen
+        options={{
+          animation: 'shift',
+        }}
+        name="Home"
+        component={Home}
+      />
+      <Tab.Screen
+        options={{
+          animation: 'shift',
+        }}
+        name="Search"
+        component={Search}
+      />
       <Tab.Screen
         name="Inbox"
         component={Inbox}
         options={{
           tabBarBadge: '',
           tabBarBadgeStyle: styles.badgeStyle,
+          animation: 'shift',
         }}
       />
-      <Tab.Screen name="Profile" component={Profile} />
-      <Tab.Screen name="Settings" component={Setting} />
+      <Tab.Screen
+        options={{
+          animation: 'shift',
+        }}
+        name="Profile"
+        component={Profile}
+      />
+      <Tab.Screen
+        options={{
+          animation: 'shift',
+        }}
+        name="Settings"
+        component={Setting}
+      />
     </Tab.Navigator>
   );
 }
