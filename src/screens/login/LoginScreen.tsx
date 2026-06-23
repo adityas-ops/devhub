@@ -1,72 +1,58 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   Text,
   View,
-  TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
 } from 'react-native';
 import { useAppDispatch } from '../../store';
 import { login } from '../../store/slices/authSlice';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
 
 export default function LoginScreen() {
   const dispatch = useAppDispatch();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    if (email.trim() === '') {
-      Alert.alert('Error', 'Please enter your email.');
-      return;
-    }
-    dispatch(login({ email: email.trim() }));
+    dispatch(login({ email: 'github-user@devhub.com' }));
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <View style={styles.content}>
-          <Text style={styles.logo}>DevHub</Text>
-          <Text style={styles.subtitle}>Sign in to your developer account</Text>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email Address</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., alex@company.com"
-              placeholderTextColor="#64748b"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
+      <View style={styles.content}>
+        {/* Logo and App name section */}
+        <View style={styles.logoContainer}>
+          <View style={styles.iconWrapper}>
+            <FontAwesome6
+              name="github"
+              size={48}
+              color="#ffffff"
+              iconStyle="brand"
             />
           </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor="#64748b"
-              secureTextEntry
-              autoCapitalize="none"
-              value={password}
-              onChangeText={setPassword}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Sign In</Text>
-          </TouchableOpacity>
+          <Text style={styles.title}>DevHub</Text>
+          <Text style={styles.subtitle}>Sign in to continue</Text>
         </View>
-      </KeyboardAvoidingView>
+
+        {/* Sign in Actions & Info */}
+        <View style={styles.actionContainer}>
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <FontAwesome6
+              name="github"
+              size={20}
+              color="#ffffff"
+              iconStyle="brand"
+              style={styles.buttonIcon}
+            />
+            <Text style={styles.buttonText}>Sign in with GitHub</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.disclaimer}>
+            Opens a secure browser session.{'\n'}
+            OAuth + PKCE — no password ever touches this app.
+          </Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -74,58 +60,77 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  keyboardView: {
-    flex: 1,
+    backgroundColor: '#faf9f6',
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 30,
+    justifyContent: 'space-between',
+    paddingVertical: 40,
   },
-  logo: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#3b82f6',
-    textAlign: 'center',
-    marginBottom: 8,
+  logoContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  iconWrapper: {
+    width: 96,
+    height: 96,
+    borderRadius: 28,
+    backgroundColor: '#0f172a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginTop: 24,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: '#94a3b8',
-    textAlign: 'center',
-    marginBottom: 32,
+    color: '#64748b',
+    marginTop: 8,
   },
-  inputContainer: {
+  actionContainer: {
+    width: '100%',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  label: {
-    fontSize: 14,
-    color: '#e2e8f0',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  input: {
-    backgroundColor: '#1e293b',
-    color: '#f8fafc',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
   button: {
-    backgroundColor: '#3b82f6',
-    paddingVertical: 16,
-    borderRadius: 12,
+    flexDirection: 'row',
+    backgroundColor: '#0f172a',
+    width: '100%',
+    height: 56,
+    borderRadius: 18,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 6,
+    marginBottom: 20,
+  },
+  buttonIcon: {
+    marginRight: 10,
   },
   buttonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  disclaimer: {
+    fontSize: 13,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });
