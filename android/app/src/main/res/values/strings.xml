@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">devhub</string>
+    <string name="react_native_packager_hostname">0.52.162.161</string>
 </resources>

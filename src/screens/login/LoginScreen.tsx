@@ -4,17 +4,23 @@ import {
   Text,
   View,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useAppDispatch } from '../../store';
 import { login } from '../../store/slices/authSlice';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
+import { useGitHubAuth } from '../../auth/useGitHubAuth';
 
 export default function LoginScreen() {
   const dispatch = useAppDispatch();
+  const { login: doGithubLogin, loading, error } = useGitHubAuth();
 
-  const handleLogin = () => {
-    dispatch(login({ email: 'github-user@devhub.com' }));
+  const handleLogin = async () => {
+    const result = await doGithubLogin();
+    if (result.success && result.user) {
+      dispatch(login(result.user));
+    }
   };
 
   return (
@@ -36,15 +42,27 @@ export default function LoginScreen() {
 
         {/* Sign in Actions & Info */}
         <View style={styles.actionContainer}>
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <FontAwesome6
-              name="github"
-              size={20}
-              color="#ffffff"
-              iconStyle="brand"
-              style={styles.buttonIcon}
-            />
-            <Text style={styles.buttonText}>Sign in with GitHub</Text>
+          {error && <Text style={styles.errorText}>{error}</Text>}
+          
+          <TouchableOpacity 
+            style={[styles.button, loading && { opacity: 0.6 }]} 
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <>
+                <FontAwesome6
+                  name="github"
+                  size={20}
+                  color="#ffffff"
+                  iconStyle="brand"
+                  style={styles.buttonIcon}
+                />
+                <Text style={styles.buttonText}>Sign in with GitHub</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <Text style={styles.disclaimer}>
@@ -103,6 +121,12 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  errorText: {
+    color: '#ef4444',
+    marginBottom: 12,
+    textAlign: 'center',
+    fontSize: 14,
   },
   button: {
     flexDirection: 'row',
