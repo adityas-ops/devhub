@@ -1,15 +1,18 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { storage, getUser, GitHubUser } from '../../storage/mmkvStorage';
 
 interface AuthState {
   isOnboarded: boolean;
   isAuthenticated: boolean;
-  user: { email: string } | null;
+  user: GitHubUser | null;
 }
 
+const initialUser = getUser();
+
 const initialState: AuthState = {
-  isOnboarded: false,
-  isAuthenticated: false,
-  user: null,
+  isOnboarded: storage.getBoolean('isOnboarded') ?? false,
+  isAuthenticated: !!initialUser,
+  user: initialUser,
 };
 
 const authSlice = createSlice({
@@ -18,8 +21,9 @@ const authSlice = createSlice({
   reducers: {
     completeOnboarding(state) {
       state.isOnboarded = true;
+      storage.set('isOnboarded', true);
     },
-    login(state, action) {
+    login(state, action: PayloadAction<GitHubUser>) {
       state.isAuthenticated = true;
       state.user = action.payload;
     },
