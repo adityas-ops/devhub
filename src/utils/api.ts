@@ -5,6 +5,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from 'axios';
 import { getToken, clearToken } from '../storage/secureStorage';
+import Config from 'react-native-config';
 
 // Standard API Error Interface
 export interface ApiError {
@@ -43,7 +44,7 @@ class ApiClient {
         // Bypass token injection if skipAuth is explicitly set
         if (!config.skipAuth) {
           try {
-            const token = await getToken();
+            const token = (await getToken()) || Config.GITHUB_TOKEN;
             if (token) {
               config.headers = config.headers || {};
               config.headers.Authorization = `Bearer ${token}`;

@@ -7,6 +7,11 @@ export interface GitHubUser {
   email: string | null;
   avatar_url: string;
   bio?: string | null;
+  company?: string | null;
+  location?: string | null;
+  followers?: number;
+  following?: number;
+  public_repos?: number;
 }
 
 export const storage: MMKV = createMMKV({ id: 'devhub-storage' });

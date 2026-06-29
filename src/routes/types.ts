@@ -21,6 +21,7 @@ export type AppTabParamList = {
 export type AppStackParamList = {
   MainTabs: NavigatorScreenParams<AppTabParamList>;
   Details: { itemId: number; title: string };
+  Contributions: { username: string };
 };
 
 export type RootStackParamList = {

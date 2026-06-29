@@ -19,6 +19,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     const result = await doGithubLogin();
     if (result.success && result.user) {
+      console.log(result);
       dispatch(login(result.user));
     }
   };
@@ -43,9 +44,9 @@ export default function LoginScreen() {
         {/* Sign in Actions & Info */}
         <View style={styles.actionContainer}>
           {error && <Text style={styles.errorText}>{error}</Text>}
-          
-          <TouchableOpacity 
-            style={[styles.button, loading && { opacity: 0.6 }]} 
+
+          <TouchableOpacity
+            style={[styles.button, loading && { opacity: 0.6 }]}
             onPress={handleLogin}
             disabled={loading}
           >

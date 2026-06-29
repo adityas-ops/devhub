@@ -14,6 +14,8 @@ import Inbox from '../screens/App/Inbox';
 import Profile from '../screens/App/Profile';
 import Setting from '../screens/App/Setting';
 import Details from '../screens/App/Details';
+import ContributionsScreen from '../screens/App/ContributionsScreen';
+// import ContributionsScreen from '../screens/App/ContributionsScreen';
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -113,6 +115,11 @@ export default function AppNavigator() {
           },
         })}
       />
+      <Stack.Screen
+        name="Contributions"
+        component={ContributionsScreen}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 }
@@ -122,7 +129,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff', // White background matching screenshot
     borderTopColor: '#f1f5f9', // Very light gray border top
     borderTopWidth: 1,
-    height: 68,
+    height: 78,
     paddingBottom: 10,
     paddingTop: 8,
   },
