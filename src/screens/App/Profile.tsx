@@ -35,6 +35,7 @@ type ProfileNavProp = NativeStackNavigationProp<
 interface Repo {
   id: number;
   name: string;
+  owner: { login: string };
   language: string;
   stargazers_count: number;
 }
@@ -264,7 +265,11 @@ export default function Profile() {
             />
           ) : repos.length > 0 ? (
             repos.map(repo => (
-              <View key={repo.id} style={styles.repoCard}>
+              <TouchableOpacity 
+                key={repo.id} 
+                style={styles.repoCard}
+                onPress={() => navigation.navigate('Details', { owner: repo.owner.login, repo: repo.name })}
+              >
                 <Text style={styles.repoName} numberOfLines={1}>
                   {repo.name}
                 </Text>
@@ -284,12 +289,15 @@ export default function Profile() {
                     </Text>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))
           ) : (
             <>
               {/* Fallback mock UI matching the image if no repos returned */}
-              <View style={styles.repoCard}>
+              <TouchableOpacity 
+                style={styles.repoCard}
+                onPress={() => navigation.navigate('Details', { owner: 'facebook', repo: 'react' })}
+              >
                 <Text style={styles.repoName}>react</Text>
                 <View style={styles.repoMeta}>
                   <View style={styles.repoLang}>
@@ -303,8 +311,11 @@ export default function Profile() {
                     <Text style={styles.repoStarsText}>220k</Text>
                   </View>
                 </View>
-              </View>
-              <View style={styles.repoCard}>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.repoCard}
+                onPress={() => navigation.navigate('Details', { owner: 'facebook', repo: 'create-react-app' })}
+              >
                 <Text style={styles.repoName} numberOfLines={1}>
                   create-react-app
                 </Text>
@@ -320,7 +331,7 @@ export default function Profile() {
                     <Text style={styles.repoStarsText}>101k</Text>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             </>
           )}
         </ScrollView>

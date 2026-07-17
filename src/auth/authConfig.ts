@@ -5,7 +5,7 @@ export const githubAuthConfig: AuthConfiguration = {
   clientId: Config.GITHUB_CLIENT_ID || '',
   clientSecret: Config.GITHUB_CLIENT_SECRET || '',
   redirectUrl: 'com.devhub://callback',
-  scopes: ['read:user', 'user:email', 'public_repo'],
+  scopes: ['read:user', 'user:email', 'public_repo', 'notifications'],
   serviceConfiguration: {
     authorizationEndpoint: 'https://github.com/login/oauth/authorize',
     tokenEndpoint: 'https://github.com/login/oauth/access_token',

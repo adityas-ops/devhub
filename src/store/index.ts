@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
 import authReducer from './slices/authSlice';
+import notifReducer from './slices/notifSlice';
 import { searchApi } from './searchApi';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    notifications: notifReducer,
     [searchApi.reducerPath]: searchApi.reducer,
   },
   middleware: getDefaultMiddleware =>

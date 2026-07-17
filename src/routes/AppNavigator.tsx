@@ -6,6 +6,7 @@ import Ionicons, {
   IoniconsIconName,
 } from '@react-native-vector-icons/ionicons/static';
 import { AppStackParamList, AppTabParamList } from './types';
+import { useAppSelector } from '../store';
 
 // Import Screens
 import Home from '../screens/App/Home';
@@ -15,12 +16,15 @@ import Profile from '../screens/App/Profile';
 import Setting from '../screens/App/Setting';
 import Details from '../screens/App/Details';
 import ContributionsScreen from '../screens/App/ContributionsScreen';
-// import ContributionsScreen from '../screens/App/ContributionsScreen';
+import CodeViewer from '../screens/App/CodeViewer';
+// import CodeViewer from '../screens/App/CodeViewer';
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
 function TabNavigator() {
+  const unreadCount = useAppSelector(s => s.notifications.unreadCount);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -53,16 +57,12 @@ function TabNavigator() {
       })}
     >
       <Tab.Screen
-        options={{
-          animation: 'shift',
-        }}
+        options={{ animation: 'shift' }}
         name="Home"
         component={Home}
       />
       <Tab.Screen
-        options={{
-          animation: 'shift',
-        }}
+        options={{ animation: 'shift' }}
         name="Search"
         component={Search}
       />
@@ -70,22 +70,23 @@ function TabNavigator() {
         name="Inbox"
         component={Inbox}
         options={{
-          tabBarBadge: '',
+          tabBarBadge:
+            unreadCount > 0
+              ? unreadCount > 99
+                ? '99+'
+                : unreadCount
+              : undefined,
           tabBarBadgeStyle: styles.badgeStyle,
           animation: 'shift',
         }}
       />
       <Tab.Screen
-        options={{
-          animation: 'shift',
-        }}
+        options={{ animation: 'shift' }}
         name="Profile"
         component={Profile}
       />
       <Tab.Screen
-        options={{
-          animation: 'shift',
-        }}
+        options={{ animation: 'shift' }}
         name="Settings"
         component={Setting}
       />
@@ -104,16 +105,12 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Details"
         component={Details}
-        options={({ route }) => ({
-          title: route.params?.title || 'Details',
-          headerStyle: {
-            backgroundColor: '#1e293b',
-          },
-          headerTintColor: '#f8fafc',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-        })}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="CodeViewer"
+        component={CodeViewer}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Contributions"

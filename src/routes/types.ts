@@ -20,7 +20,8 @@ export type AppTabParamList = {
 
 export type AppStackParamList = {
   MainTabs: NavigatorScreenParams<AppTabParamList>;
-  Details: { itemId: number; title: string };
+  Details: { owner: string; repo: string };
+  CodeViewer: { owner: string; repo: string; path: string; sha: string; branch: string };
   Contributions: { username: string };
 };
 

@@ -10,6 +10,7 @@ import {
   RefreshControl,
   Platform,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6/static';
 import { useAppSelector } from '../../store';
@@ -44,6 +45,7 @@ import { AnimatedRepoCard } from '../../components/home/AnimatedRepoCard';
 import { Toast } from '../../components/home/Toast';
 
 export default function Home() {
+  const navigation = useNavigation<any>();
   const user = useAppSelector(state => state.auth.user);
 
   const [activeTab, setActiveTab] = useState<
@@ -216,7 +218,10 @@ export default function Home() {
     const isStarred = starredSet.has(item.full_name);
     return (
       <AnimatedRepoCard index={index}>
-        <View style={styles.repoCard}>
+        <TouchableOpacity 
+          style={styles.repoCard}
+          onPress={() => navigation.navigate('Details', { owner: item.owner?.login, repo: item.name })}
+        >
           <View style={styles.repoHeaderRow}>
             <Image
               source={{ uri: item.owner?.avatar_url }}
@@ -272,7 +277,7 @@ export default function Home() {
               </Text>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </AnimatedRepoCard>
     );
   };
