@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,13 @@ import {
   ActivityIndicator,
   Linking,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppStackParamList } from '../../routes/types';
 import api from '../../utils/api';
 import Ionicons from '@react-native-vector-icons/ionicons/static';
-import SyntaxHighlighter from 'react-native-syntax-highlighter';
-import github from 'react-syntax-highlighter/dist/esm/styles/hljs/github';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { Buffer } from 'buffer';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -45,6 +44,94 @@ const langMap: Record<string, string> = {
   'yaml': 'yaml',
 };
 
+// Simple keyword-based syntax coloring for common languages
+const KEYWORD_COLORS: Record<string, string> = {
+  keyword: '#d73a49',
+  string: '#032f62',
+  comment: '#6a737d',
+  number: '#005cc5',
+  punctuation: '#24292e',
+  default: '#24292e',
+};
+
+const KEYWORDS = new Set([
+  'import', 'export', 'from', 'default', 'const', 'let', 'var', 'function',
+  'return', 'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'break',
+  'continue', 'new', 'this', 'class', 'extends', 'super', 'try', 'catch',
+  'finally', 'throw', 'async', 'await', 'yield', 'of', 'in', 'typeof',
+  'instanceof', 'void', 'delete', 'true', 'false', 'null', 'undefined',
+  'interface', 'type', 'enum', 'implements', 'package', 'private', 'protected',
+  'public', 'static', 'readonly', 'abstract', 'as', 'is', 'keyof',
+  'def', 'self', 'None', 'True', 'False', 'lambda', 'pass', 'raise',
+  'with', 'elif', 'except', 'print', 'and', 'or', 'not',
+  'fn', 'pub', 'mod', 'use', 'struct', 'impl', 'trait', 'mut', 'ref',
+  'func', 'go', 'chan', 'map', 'range', 'defer', 'select',
+]);
+
+function tokenizeLine(line: string): { text: string; color: string }[] {
+  const tokens: { text: string; color: string }[] = [];
+  // Simple regex-based tokenizer
+  const regex = /(\/\/.*$|#.*$|\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|\b\d+\.?\d*\b|\b[a-zA-Z_]\w*\b|[^\s]|\s+)/g;
+  let match;
+
+  while ((match = regex.exec(line)) !== null) {
+    const token = match[0];
+    let color = KEYWORD_COLORS.default;
+
+    if (token.startsWith('//') || token.startsWith('#') || token.startsWith('/*')) {
+      color = KEYWORD_COLORS.comment;
+    } else if (token.startsWith('"') || token.startsWith("'") || token.startsWith('`')) {
+      color = KEYWORD_COLORS.string;
+    } else if (/^\d/.test(token)) {
+      color = KEYWORD_COLORS.number;
+    } else if (KEYWORDS.has(token)) {
+      color = KEYWORD_COLORS.keyword;
+    }
+
+    tokens.push({ text: token, color });
+  }
+
+  if (tokens.length === 0) {
+    tokens.push({ text: line, color: KEYWORD_COLORS.default });
+  }
+
+  return tokens;
+}
+
+interface CodeLineProps {
+  lineNumber: number;
+  lineText: string;
+  fontSize: number;
+  totalLines: number;
+}
+
+const CodeLine = React.memo(({ lineNumber, lineText, fontSize, totalLines }: CodeLineProps) => {
+  const gutterWidth = Math.max(String(totalLines).length * (fontSize * 0.65), 28);
+  const tokens = tokenizeLine(lineText);
+
+  return (
+    <View style={styles.codeLine}>
+      <View style={[styles.lineNumberGutter, { width: gutterWidth }]}>
+        <Text
+          style={[
+            styles.lineNumber,
+            { fontSize, lineHeight: fontSize + 6 },
+          ]}
+        >
+          {lineNumber}
+        </Text>
+      </View>
+      <Text style={[styles.lineContent, { fontSize, lineHeight: fontSize + 6 }]}>
+        {tokens.map((token, i) => (
+          <Text key={i} style={{ color: token.color }}>
+            {token.text}
+          </Text>
+        ))}
+      </Text>
+    </View>
+  );
+});
+
 export default function CodeViewer() {
   const route = useRoute<CodeViewerRouteProp>();
   const navigation = useNavigation<any>();
@@ -60,6 +147,8 @@ export default function CodeViewer() {
 
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
+
+  const lines = useMemo(() => code.split('\n'), [code]);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -159,29 +248,27 @@ export default function CodeViewer() {
         ) : (
           <GestureDetector gesture={pinchGesture}>
             <Animated.View style={[styles.gestureWrapper]}>
-              <ScrollView 
+              <ScrollView
                 showsVerticalScrollIndicator={true}
                 contentContainerStyle={styles.scrollContent}
               >
-                <ScrollView 
-                  horizontal 
+                <ScrollView
+                  horizontal
                   showsHorizontalScrollIndicator={true}
                   contentContainerStyle={styles.scrollContentHorizontal}
                 >
                   <Animated.View style={[styles.codeScaleWrapper, animatedStyle]}>
-                    <SyntaxHighlighter
-                      language={language}
-                      style={github}
-                      customStyle={{
-                        padding: 16,
-                        margin: 0,
-                        backgroundColor: '#fff',
-                      }}
-                      fontSize={baseFontSize}
-                      highlighter={"hljs"}
-                    >
-                      {code}
-                    </SyntaxHighlighter>
+                    <View style={styles.codeBlock}>
+                      {lines.map((line, index) => (
+                        <CodeLine
+                          key={index}
+                          lineNumber={index + 1}
+                          lineText={line}
+                          fontSize={baseFontSize}
+                          totalLines={lines.length}
+                        />
+                      ))}
+                    </View>
                   </Animated.View>
                 </ScrollView>
               </ScrollView>
@@ -311,5 +398,29 @@ const styles = StyleSheet.create({
   },
   codeScaleWrapper: {
     transformOrigin: 'top left',
-  }
+  },
+  codeBlock: {
+    padding: 8,
+    backgroundColor: '#fff',
+    minWidth: '100%',
+  },
+  codeLine: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  lineNumberGutter: {
+    alignItems: 'flex-end',
+    paddingRight: 12,
+    borderRightWidth: 1,
+    borderRightColor: '#e5e7eb',
+    marginRight: 12,
+  },
+  lineNumber: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    color: '#9ca3af',
+  },
+  lineContent: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    flex: 1,
+  },
 });
