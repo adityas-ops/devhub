@@ -8,6 +8,7 @@ import {
   Linking,
   ScrollView,
   Platform,
+  Image,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,31 +18,36 @@ import Ionicons from '@react-native-vector-icons/ionicons/static';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { Buffer } from 'buffer';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
+import Markdown from 'react-native-markdown-display';
+import { preprocessMarkdown, markdownStyles } from './Details';
 
 type CodeViewerRouteProp = RouteProp<AppStackParamList, 'CodeViewer'>;
 
 const langMap: Record<string, string> = {
-  'js': 'javascript',
-  'jsx': 'javascript',
-  'ts': 'typescript',
-  'tsx': 'typescript',
-  'py': 'python',
-  'rb': 'ruby',
-  'go': 'go',
-  'rs': 'rust',
-  'java': 'java',
-  'cpp': 'cpp',
-  'c': 'c',
-  'cs': 'csharp',
-  'php': 'php',
-  'html': 'xml',
-  'css': 'css',
-  'json': 'json',
-  'md': 'markdown',
-  'sh': 'bash',
-  'yml': 'yaml',
-  'yaml': 'yaml',
+  js: 'javascript',
+  jsx: 'javascript',
+  ts: 'typescript',
+  tsx: 'typescript',
+  py: 'python',
+  rb: 'ruby',
+  go: 'go',
+  rs: 'rust',
+  java: 'java',
+  cpp: 'cpp',
+  c: 'c',
+  cs: 'csharp',
+  php: 'php',
+  html: 'xml',
+  css: 'css',
+  json: 'json',
+  md: 'markdown',
+  sh: 'bash',
+  yml: 'yaml',
+  yaml: 'yaml',
 };
 
 // Simple keyword-based syntax coloring for common languages
@@ -55,32 +61,115 @@ const KEYWORD_COLORS: Record<string, string> = {
 };
 
 const KEYWORDS = new Set([
-  'import', 'export', 'from', 'default', 'const', 'let', 'var', 'function',
-  'return', 'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'break',
-  'continue', 'new', 'this', 'class', 'extends', 'super', 'try', 'catch',
-  'finally', 'throw', 'async', 'await', 'yield', 'of', 'in', 'typeof',
-  'instanceof', 'void', 'delete', 'true', 'false', 'null', 'undefined',
-  'interface', 'type', 'enum', 'implements', 'package', 'private', 'protected',
-  'public', 'static', 'readonly', 'abstract', 'as', 'is', 'keyof',
-  'def', 'self', 'None', 'True', 'False', 'lambda', 'pass', 'raise',
-  'with', 'elif', 'except', 'print', 'and', 'or', 'not',
-  'fn', 'pub', 'mod', 'use', 'struct', 'impl', 'trait', 'mut', 'ref',
-  'func', 'go', 'chan', 'map', 'range', 'defer', 'select',
+  'import',
+  'export',
+  'from',
+  'default',
+  'const',
+  'let',
+  'var',
+  'function',
+  'return',
+  'if',
+  'else',
+  'for',
+  'while',
+  'do',
+  'switch',
+  'case',
+  'break',
+  'continue',
+  'new',
+  'this',
+  'class',
+  'extends',
+  'super',
+  'try',
+  'catch',
+  'finally',
+  'throw',
+  'async',
+  'await',
+  'yield',
+  'of',
+  'in',
+  'typeof',
+  'instanceof',
+  'void',
+  'delete',
+  'true',
+  'false',
+  'null',
+  'undefined',
+  'interface',
+  'type',
+  'enum',
+  'implements',
+  'package',
+  'private',
+  'protected',
+  'public',
+  'static',
+  'readonly',
+  'abstract',
+  'as',
+  'is',
+  'keyof',
+  'def',
+  'self',
+  'None',
+  'True',
+  'False',
+  'lambda',
+  'pass',
+  'raise',
+  'with',
+  'elif',
+  'except',
+  'print',
+  'and',
+  'or',
+  'not',
+  'fn',
+  'pub',
+  'mod',
+  'use',
+  'struct',
+  'impl',
+  'trait',
+  'mut',
+  'ref',
+  'func',
+  'go',
+  'chan',
+  'map',
+  'range',
+  'defer',
+  'select',
 ]);
 
 function tokenizeLine(line: string): { text: string; color: string }[] {
   const tokens: { text: string; color: string }[] = [];
   // Simple regex-based tokenizer
-  const regex = /(\/\/.*$|#.*$|\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|\b\d+\.?\d*\b|\b[a-zA-Z_]\w*\b|[^\s]|\s+)/g;
+  const regex =
+    /(\/\/.*$|#.*$|\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|\b\d+\.?\d*\b|\b[a-zA-Z_]\w*\b|[^\s]|\s+)/g;
   let match;
 
   while ((match = regex.exec(line)) !== null) {
     const token = match[0];
     let color = KEYWORD_COLORS.default;
 
-    if (token.startsWith('//') || token.startsWith('#') || token.startsWith('/*')) {
+    if (
+      token.startsWith('//') ||
+      token.startsWith('#') ||
+      token.startsWith('/*')
+    ) {
       color = KEYWORD_COLORS.comment;
-    } else if (token.startsWith('"') || token.startsWith("'") || token.startsWith('`')) {
+    } else if (
+      token.startsWith('"') ||
+      token.startsWith("'") ||
+      token.startsWith('`')
+    ) {
       color = KEYWORD_COLORS.string;
     } else if (/^\d/.test(token)) {
       color = KEYWORD_COLORS.number;
@@ -105,32 +194,36 @@ interface CodeLineProps {
   totalLines: number;
 }
 
-const CodeLine = React.memo(({ lineNumber, lineText, fontSize, totalLines }: CodeLineProps) => {
-  const gutterWidth = Math.max(String(totalLines).length * (fontSize * 0.65), 28);
-  const tokens = tokenizeLine(lineText);
+const CodeLine = React.memo(
+  ({ lineNumber, lineText, fontSize, totalLines }: CodeLineProps) => {
+    const gutterWidth = Math.max(
+      String(totalLines).length * (fontSize * 0.65),
+      28,
+    );
+    const tokens = tokenizeLine(lineText);
 
-  return (
-    <View style={styles.codeLine}>
-      <View style={[styles.lineNumberGutter, { width: gutterWidth }]}>
+    return (
+      <View style={styles.codeLine}>
+        <View style={[styles.lineNumberGutter, { width: gutterWidth }]}>
+          <Text
+            style={[styles.lineNumber, { fontSize, lineHeight: fontSize + 6 }]}
+          >
+            {lineNumber}
+          </Text>
+        </View>
         <Text
-          style={[
-            styles.lineNumber,
-            { fontSize, lineHeight: fontSize + 6 },
-          ]}
+          style={[styles.lineContent, { fontSize, lineHeight: fontSize + 6 }]}
         >
-          {lineNumber}
+          {tokens.map((token, i) => (
+            <Text key={i} style={{ color: token.color }}>
+              {token.text}
+            </Text>
+          ))}
         </Text>
       </View>
-      <Text style={[styles.lineContent, { fontSize, lineHeight: fontSize + 6 }]}>
-        {tokens.map((token, i) => (
-          <Text key={i} style={{ color: token.color }}>
-            {token.text}
-          </Text>
-        ))}
-      </Text>
-    </View>
-  );
-});
+    );
+  },
+);
 
 export default function CodeViewer() {
   const route = useRoute<CodeViewerRouteProp>();
@@ -182,7 +275,7 @@ export default function CodeViewer() {
   const handleZoomOut = () => setBaseFontSize(prev => Math.max(8, prev - 2));
 
   const pinchGesture = Gesture.Pinch()
-    .onUpdate((e) => {
+    .onUpdate(e => {
       scale.value = savedScale.value * e.scale;
     })
     .onEnd(() => {
@@ -191,9 +284,7 @@ export default function CodeViewer() {
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [
-        { scale: scale.value },
-      ],
+      transform: [{ scale: scale.value }],
     };
   });
 
@@ -202,11 +293,16 @@ export default function CodeViewer() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => navigation.goBack()}
+          >
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <View style={styles.titleContainer}>
-            <Text style={styles.filename} numberOfLines={1}>{path.split('/').pop()}</Text>
+            <Text style={styles.filename} numberOfLines={1}>
+              {path.split('/').pop()}
+            </Text>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{language}</Text>
             </View>
@@ -214,8 +310,15 @@ export default function CodeViewer() {
         </View>
 
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconBtnSmall} onPress={copyToClipboard}>
-            <Ionicons name={copied ? "checkmark" : "copy-outline"} size={20} color={copied ? "#22c55e" : "#000"} />
+          <TouchableOpacity
+            style={styles.iconBtnSmall}
+            onPress={copyToClipboard}
+          >
+            <Ionicons
+              name={copied ? 'checkmark' : 'copy-outline'}
+              size={20}
+              color={copied ? '#22c55e' : '#000'}
+            />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconBtnSmall} onPress={openInBrowser}>
             <Ionicons name="open-outline" size={20} color="#000" />
@@ -224,7 +327,7 @@ export default function CodeViewer() {
       </View>
 
       {/* Toolbar for Zooming */}
-      <View style={styles.toolbar}>
+      {/* <View style={styles.toolbar}>
         <View style={styles.toolbarLeft}>
           <Ionicons name="search-outline" size={14} color="#666" />
           <Text style={styles.toolbarText}> Pinch or use buttons to zoom</Text>
@@ -237,7 +340,7 @@ export default function CodeViewer() {
             <Ionicons name="add" size={20} color="#000" />
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
 
       {/* Code Area */}
       <View style={styles.codeContainer}>
@@ -245,6 +348,31 @@ export default function CodeViewer() {
           <View style={styles.center}>
             <ActivityIndicator size="large" />
           </View>
+        ) : ext === 'md' ? (
+          <ScrollView
+            showsVerticalScrollIndicator={true}
+            contentContainerStyle={styles.readmeContainer}
+          >
+            <Markdown
+              style={markdownStyles}
+              rules={{
+                image: (node: any, children: any, parent: any, styles: any) => {
+                  const { key, ...rest } = node.attributes;
+                  return (
+                    <Image
+                      key={node.key}
+                      style={markdownStyles.image}
+                      source={{ uri: rest.src }}
+                      accessibilityLabel={rest.alt || ''}
+                      resizeMode="contain"
+                    />
+                  );
+                },
+              }}
+            >
+              {preprocessMarkdown(code)}
+            </Markdown>
+          </ScrollView>
         ) : (
           <GestureDetector gesture={pinchGesture}>
             <Animated.View style={[styles.gestureWrapper]}>
@@ -257,7 +385,9 @@ export default function CodeViewer() {
                   showsHorizontalScrollIndicator={true}
                   contentContainerStyle={styles.scrollContentHorizontal}
                 >
-                  <Animated.View style={[styles.codeScaleWrapper, animatedStyle]}>
+                  <Animated.View
+                    style={[styles.codeScaleWrapper, animatedStyle]}
+                  >
                     <View style={styles.codeBlock}>
                       {lines.map((line, index) => (
                         <CodeLine
@@ -409,18 +539,24 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   lineNumberGutter: {
-    alignItems: 'flex-end',
-    paddingRight: 12,
+    paddingRight: 16,
     borderRightWidth: 1,
-    borderRightColor: '#e5e7eb',
-    marginRight: 12,
+    borderRightColor: '#e2e8f0',
+    marginRight: 16,
+    alignItems: 'flex-end',
+    backgroundColor: '#f8fafc',
   },
   lineNumber: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    color: '#9ca3af',
+    color: '#94a3b8',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   lineContent: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     flex: 1,
+    color: '#334155',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  readmeContainer: {
+    padding: 16,
+    backgroundColor: '#fff',
   },
 });

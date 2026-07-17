@@ -65,7 +65,7 @@ interface Branch {
  * into markdown equivalents so react-native-markdown-display
  * can render them properly.
  */
-function preprocessMarkdown(md: string): string {
+export function preprocessMarkdown(md: string): string {
   let result = md;
 
   // Convert <img> tags to markdown images
@@ -142,7 +142,7 @@ function preprocessMarkdown(md: string): string {
 }
 
 // Custom markdown styles
-const markdownStyles = StyleSheet.create({
+export const markdownStyles = StyleSheet.create({
   body: {
     fontSize: 15,
     color: '#24292e',

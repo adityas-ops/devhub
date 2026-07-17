@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,19 +10,91 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
-import { useAppSelector } from '../../store';
-import { useGitHubAuth } from '../../auth/useGitHubAuth';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6/static';
+import { useAppSelector, useAppDispatch } from '../../store';
+import { useGitHubAuth } from '../../auth/useGitHubAuth';
+import api from '../../utils/api';
+import { searchApi } from '../../store/searchApi';
+import { storage } from '../../storage/mmkvStorage';
+import * as Keychain from 'react-native-keychain';
+import { logout as logoutAction } from '../../store/slices/authSlice';
+import { Toast } from '../../components/home/Toast';
+import { useNavigation } from '@react-navigation/native';
 // import { useAppSelector } from '../../../store';
 // import { useGitHubAuth } from '../../../auth/useGitHubAuth';
 
 export default function Setting() {
   const user = useAppSelector(state => state.auth.user);
-  const { logout } = useGitHubAuth();
+  const { logout: authLogout } = useGitHubAuth();
+  const dispatch = useAppDispatch();
+  const navigation = useNavigation<any>();
 
   const [prReviews, setPrReviews] = useState(true);
   const [mentions, setMentions] = useState(true);
   const [releases, setReleases] = useState(true);
+
+  // Rate Limit State
+  const [rateLimit, setRateLimit] = useState<{
+    limit: number;
+    remaining: number;
+  } | null>(null);
+
+  // Cache Size State
+  const [cacheSize, setCacheSize] = useState('0 MB');
+
+  // Toast State
+  const [toastVisible, setToastVisible] = useState(false);
+
+  // 1. Fetch Rate Limit
+  useEffect(() => {
+    const fetchRateLimit = async () => {
+      try {
+        const res = await api.get<any>('/rate_limit');
+        if (res?.resources?.core) {
+          setRateLimit(res.resources.core);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch rate limit:', err);
+      }
+    };
+    fetchRateLimit();
+  }, []);
+
+  // 2. Get Storage Size
+  const getStorageSize = React.useCallback(() => {
+    const keys = storage.getAllKeys();
+    let totalBytes = 0;
+    keys.forEach(key => {
+      const value = storage.getString(key);
+      if (value) {
+        totalBytes += value.length;
+      }
+    });
+    const sizeMb = (totalBytes / (1024 * 1024)).toFixed(1);
+    setCacheSize(`${sizeMb} MB`);
+  }, []);
+
+  useEffect(() => {
+    getStorageSize();
+  }, [getStorageSize]);
+
+  // 3. Clear Cache
+  const handleClearCache = () => {
+    dispatch(searchApi.util.resetApiState());
+    storage.clearAll();
+    getStorageSize();
+    setToastVisible(true);
+  };
+
+  // 4. Handle Logout
+  const handleLogout = async () => {
+    // await Keychain.resetInternetCredentials('github_auth'); // Or whatever the service name is
+    dispatch(logoutAction());
+    // Use authLogout to ensure MMKV and other things are fully cleared as originally intended
+    await authLogout();
+    // Navigation to Auth is usually handled by the root navigator when auth state changes,
+    // but we can forcefully navigate if needed (assuming 'Auth' route exists).
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -86,10 +158,14 @@ export default function Setting() {
         {/* STORAGE SECTION */}
         <Text style={styles.sectionHeader}>STORAGE</Text>
         <View style={styles.card}>
-          <TouchableOpacity style={styles.row} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.row}
+            activeOpacity={0.7}
+            onPress={handleClearCache}
+          >
             <View>
               <Text style={styles.rowText}>Clear cache</Text>
-              <Text style={styles.subText}>Frees up 2.4 MB</Text>
+              <Text style={styles.subText}>Frees up {cacheSize}</Text>
             </View>
             <FontAwesome6 name="trash-can" size={18} color="#475569" />
           </TouchableOpacity>
@@ -100,10 +176,23 @@ export default function Setting() {
         <View style={styles.card}>
           <View style={styles.apiLimitRow}>
             <Text style={styles.subText}>API rate limit</Text>
-            <Text style={styles.apiLimitText}>4,823 / 5,000</Text>
+            <Text style={styles.apiLimitText}>
+              {rateLimit
+                ? `${rateLimit.remaining} / ${rateLimit.limit}`
+                : 'Loading...'}
+            </Text>
           </View>
           <View style={styles.progressBarContainer}>
-            <View style={styles.progressBarFill} />
+            <View
+              style={[
+                styles.progressBarFill,
+                {
+                  width: rateLimit
+                    ? `${(rateLimit.remaining / rateLimit.limit) * 100}%`
+                    : '0%',
+                },
+              ]}
+            />
           </View>
         </View>
 
@@ -128,7 +217,7 @@ export default function Setting() {
         {/* LOGOUT BUTTON */}
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={logout}
+          onPress={handleLogout}
           activeOpacity={0.8}
         >
           <FontAwesome6
@@ -142,6 +231,13 @@ export default function Setting() {
 
         <View style={styles.bottomPadding} />
       </ScrollView>
+      {toastVisible && (
+        <Toast
+          message="Cache cleared successfully"
+          type="success"
+          onClose={() => setToastVisible(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }
