@@ -8,3 +8,11 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# react-native-config — reads env vars via reflection on app's BuildConfig
+-keep class com.devhub.BuildConfig { *; }
+
+# react-native-app-auth
+-keep class net.openid.appauth.** { *; }
+-keep class com.reactlibrary.appauth.** { *; }
+
