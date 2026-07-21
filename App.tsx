@@ -9,7 +9,18 @@ import { client } from './src/graphql/client';
 import NavigationProvider from './src/routes';
 import { StatusBar } from 'react-native';
 
+import SplashScreen from './src/components/SplashScreen';
+
 function App() {
+  const [appLoading, setAppLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setAppLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
@@ -18,6 +29,7 @@ function App() {
           <SafeAreaProvider>
             <NavigationProvider />
           </SafeAreaProvider>
+          <SplashScreen isLoading={appLoading} />
         </ApolloProvider>
       </Provider>
     </GestureHandlerRootView>

@@ -5,6 +5,7 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useAppDispatch } from '../../store';
 import { login } from '../../store/slices/authSlice';
@@ -30,11 +31,10 @@ export default function LoginScreen() {
         {/* Logo and App name section */}
         <View style={styles.logoContainer}>
           <View style={styles.iconWrapper}>
-            <FontAwesome6
-              name="github"
-              size={48}
-              color="#ffffff"
-              iconStyle="brand"
+            <Image
+              source={require('../../assets/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
             />
           </View>
           <Text style={styles.title}>DevHub</Text>
@@ -97,7 +97,6 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 28,
-    backgroundColor: '#0f172a',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#0f172a',
@@ -105,6 +104,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 20,
     elevation: 8,
+  },
+  logoImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 28,
   },
   title: {
     fontSize: 32,

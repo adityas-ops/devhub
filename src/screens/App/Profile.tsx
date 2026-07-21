@@ -47,16 +47,16 @@ const fallbackUser = {
   followers: 10,
   following: 10,
   public_repos: 5,
-  login: "github-user",
-  name: "GitHub User",
-  email: "user@example.com",
-  created_at: "2020-01-01T00:00:00Z",
-  location: "San Francisco, CA",
+  login: 'github-user',
+  name: 'GitHub User',
+  email: 'user@example.com',
+  created_at: '2020-01-01T00:00:00Z',
+  location: 'San Francisco, CA',
   stats: {
     totalCommits: 0,
     currentStreak: 0,
     longestStreak: 0,
-  }
+  },
 };
 
 export default function Profile() {
@@ -136,7 +136,6 @@ export default function Profile() {
     fetchData();
   }, []);
 
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -171,7 +170,7 @@ export default function Profile() {
 
           <Text style={styles.bioText}>{user?.bio || ''}</Text>
 
-          <View style={styles.metaRow}>
+          {/* <View style={styles.metaRow}>
             {user?.location && (
               <View style={styles.metaItem}>
                 <FontAwesome6
@@ -180,7 +179,7 @@ export default function Profile() {
                   color="#94a3b8"
                   iconStyle="solid"
                 />
-                <Text style={styles.metaText}>{user.location}</Text>
+                <Text style={styles.metaText}>{user.location} sd</Text>
               </View>
             )}
             {user?.company && (
@@ -189,7 +188,7 @@ export default function Profile() {
                 <Text style={styles.metaText}>{user.company}</Text>
               </View>
             )}
-            {/* Fallbacks for design if null */}
+
             {!user?.location && !user?.company && (
               <>
                 <View style={styles.metaItem}>
@@ -207,7 +206,7 @@ export default function Profile() {
                 </View>
               </>
             )}
-          </View>
+          </View> */}
 
           {/* <TouchableOpacity style={styles.followButton}>
             <Text style={styles.followButtonText}>Following</Text>
@@ -250,7 +249,7 @@ export default function Profile() {
             color="#94a3b8"
             iconStyle="solid"
           />
-          <Text style={styles.sectionHeader}>PINNED</Text>
+          <Text style={styles.sectionHeader}>Recent Repositories</Text>
         </View>
         <ScrollView
           horizontal
@@ -265,10 +264,15 @@ export default function Profile() {
             />
           ) : repos.length > 0 ? (
             repos.map(repo => (
-              <TouchableOpacity 
-                key={repo.id} 
+              <TouchableOpacity
+                key={repo.id}
                 style={styles.repoCard}
-                onPress={() => navigation.navigate('Details', { owner: repo.owner.login, repo: repo.name })}
+                onPress={() =>
+                  navigation.navigate('Details', {
+                    owner: repo.owner.login,
+                    repo: repo.name,
+                  })
+                }
               >
                 <Text style={styles.repoName} numberOfLines={1}>
                   {repo.name}
@@ -294,9 +298,14 @@ export default function Profile() {
           ) : (
             <>
               {/* Fallback mock UI matching the image if no repos returned */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.repoCard}
-                onPress={() => navigation.navigate('Details', { owner: 'facebook', repo: 'react' })}
+                onPress={() =>
+                  navigation.navigate('Details', {
+                    owner: 'facebook',
+                    repo: 'react',
+                  })
+                }
               >
                 <Text style={styles.repoName}>react</Text>
                 <View style={styles.repoMeta}>
@@ -312,9 +321,14 @@ export default function Profile() {
                   </View>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.repoCard}
-                onPress={() => navigation.navigate('Details', { owner: 'facebook', repo: 'create-react-app' })}
+                onPress={() =>
+                  navigation.navigate('Details', {
+                    owner: 'facebook',
+                    repo: 'create-react-app',
+                  })
+                }
               >
                 <Text style={styles.repoName} numberOfLines={1}>
                   create-react-app
@@ -570,5 +584,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748b',
   },
-
 });
