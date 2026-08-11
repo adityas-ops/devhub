@@ -24,10 +24,6 @@ import { AppStackParamList, AppTabParamList } from './types';
 
 import { useAppSelector } from '../store';
 
-/* -------------------------------------------------------------------------- */
-/* Screens                                                                    */
-/* -------------------------------------------------------------------------- */
-
 import Home from '../screens/App/Home';
 import Search from '../screens/App/Search';
 import Inbox from '../screens/App/Inbox';
@@ -38,17 +34,9 @@ import Details from '../screens/App/Details';
 import ContributionsScreen from '../screens/App/ContributionsScreen';
 import CodeViewer from '../screens/App/CodeViewer';
 
-/* -------------------------------------------------------------------------- */
-/* Navigators                                                                 */
-/* -------------------------------------------------------------------------- */
-
 const Tab = createBottomTabNavigator<AppTabParamList>();
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
-
-/* -------------------------------------------------------------------------- */
-/* Tab Configuration                                                          */
-/* -------------------------------------------------------------------------- */
 
 type TabConfig = {
   activeIcon: IoniconsIconName;
@@ -81,10 +69,6 @@ const TAB_CONFIG: Record<keyof AppTabParamList, TabConfig> = {
     inactiveIcon: 'settings-outline',
   },
 };
-
-/* -------------------------------------------------------------------------- */
-/* Animated Tab Item                                                          */
-/* -------------------------------------------------------------------------- */
 
 interface AnimatedTabItemProps {
   route: any;
@@ -267,10 +251,6 @@ function AnimatedTabItem({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Custom Tab Bar                                                             */
-/* -------------------------------------------------------------------------- */
-
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const unreadCount = useAppSelector(s => s.notifications.unreadCount);
 
@@ -296,10 +276,6 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     </View>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* Tab Navigator                                                              */
-/* -------------------------------------------------------------------------- */
 
 function TabNavigator() {
   return (
@@ -354,10 +330,6 @@ function TabNavigator() {
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* App Navigator                                                              */
-/* -------------------------------------------------------------------------- */
-
 export default function AppNavigator() {
   return (
     <Stack.Navigator>
@@ -396,15 +368,7 @@ export default function AppNavigator() {
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Styles                                                                     */
-/* -------------------------------------------------------------------------- */
-
 const styles = StyleSheet.create({
-  /* ---------------------------------------------------------------------- */
-  /* Tab Bar                                                                 */
-  /* ---------------------------------------------------------------------- */
-
   tabBarWrapper: {
     position: 'absolute',
     left: 0,

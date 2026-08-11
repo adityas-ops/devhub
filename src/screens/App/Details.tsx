@@ -69,10 +69,6 @@ interface Branch {
   name: string;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Markdown                                                                   */
-/* -------------------------------------------------------------------------- */
-
 export function preprocessMarkdown(md: string): string {
   let result = md;
 
@@ -277,10 +273,6 @@ export const markdownStyles = StyleSheet.create({
   },
 });
 
-/* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
-/* -------------------------------------------------------------------------- */
-
 const sortContents = (items: RepoContentItem[]): RepoContentItem[] => {
   return [...items].sort((a, b) => {
     if (a.type === 'dir' && b.type === 'file') {
@@ -294,10 +286,6 @@ const sortContents = (items: RepoContentItem[]): RepoContentItem[] => {
     return a.name.localeCompare(b.name);
   });
 };
-
-/* -------------------------------------------------------------------------- */
-/* Tab Header                                                                 */
-/* -------------------------------------------------------------------------- */
 
 interface TabsProps {
   activeTab: TabType;
@@ -343,10 +331,6 @@ const Tabs = memo(({ activeTab, onChange }: TabsProps) => {
 });
 
 Tabs.displayName = 'Tabs';
-
-/* -------------------------------------------------------------------------- */
-/* Files Tab                                                                  */
-/* -------------------------------------------------------------------------- */
 
 interface FilesTabProps {
   branches: Branch[];
@@ -468,10 +452,6 @@ const FilesTab = memo(
 
 FilesTab.displayName = 'FilesTab';
 
-/* -------------------------------------------------------------------------- */
-/* README Tab                                                                 */
-/* -------------------------------------------------------------------------- */
-
 interface ReadmeTabProps {
   readme: string;
   loading: boolean;
@@ -516,19 +496,11 @@ const ReadmeTab = memo(({ readme, loading }: ReadmeTabProps) => {
 
 ReadmeTab.displayName = 'ReadmeTab';
 
-/* -------------------------------------------------------------------------- */
-/* Details                                                                    */
-/* -------------------------------------------------------------------------- */
-
 export default function Details() {
   const route = useRoute<DetailsRouteProp>();
   const navigation = useNavigation<any>();
 
   const { owner, repo } = route.params;
-
-  /* ------------------------------------------------------------------------ */
-  /* Main state                                                               */
-  /* ------------------------------------------------------------------------ */
 
   const [activeTab, setActiveTab] = useState<TabType>('Files');
 
@@ -546,10 +518,6 @@ export default function Details() {
 
   const [isStarred, setIsStarred] = useState(false);
 
-  /* ------------------------------------------------------------------------ */
-  /* Independent loading states                                              */
-  /* ------------------------------------------------------------------------ */
-
   const [initialLoading, setInitialLoading] = useState(true);
 
   const [filesLoading, setFilesLoading] = useState(false);
@@ -558,17 +526,9 @@ export default function Details() {
 
   const [starLoading, setStarLoading] = useState(false);
 
-  /* ------------------------------------------------------------------------ */
-  /* Toast                                                                    */
-  /* ------------------------------------------------------------------------ */
-
   const [toastVisible, setToastVisible] = useState(false);
 
   const [toastMessage, setToastMessage] = useState('');
-
-  /* ------------------------------------------------------------------------ */
-  /* Refs                                                                     */
-  /* ------------------------------------------------------------------------ */
 
   const bottomSheetRef = useRef<BottomSheetModal>(null);
 
@@ -578,24 +538,12 @@ export default function Details() {
 
   const snapPoints = useMemo(() => ['50%', '90%'], []);
 
-  /* ------------------------------------------------------------------------ */
-  /* Markdown                                                                 */
-  /* ------------------------------------------------------------------------ */
-
   const processedReadme = useMemo(() => preprocessMarkdown(readme), [readme]);
-
-  /* ------------------------------------------------------------------------ */
-  /* Toast helper                                                             */
-  /* ------------------------------------------------------------------------ */
 
   const showToast = useCallback((message: string) => {
     setToastMessage(message);
     setToastVisible(true);
   }, []);
-
-  /* ------------------------------------------------------------------------ */
-  /* Fetch files for branch                                                   */
-  /* ------------------------------------------------------------------------ */
 
   const fetchBranchContents = useCallback(
     async (branch: string, path = '') => {
@@ -651,10 +599,6 @@ export default function Details() {
     [owner, repo, showToast],
   );
 
-  /* ------------------------------------------------------------------------ */
-  /* Fetch README                                                             */
-  /* ------------------------------------------------------------------------ */
-
   const fetchReadme = useCallback(
     async (branch: string) => {
       if (!branch) {
@@ -697,10 +641,6 @@ export default function Details() {
     },
     [owner, repo, readme],
   );
-
-  /* ------------------------------------------------------------------------ */
-  /* Fetch initial repository data                                            */
-  /* ------------------------------------------------------------------------ */
 
   const fetchInitialRepository = useCallback(async () => {
     setInitialLoading(true);
@@ -758,10 +698,6 @@ export default function Details() {
     }
   }, [owner, repo, fetchBranchContents, showToast]);
 
-  /* ------------------------------------------------------------------------ */
-  /* Initial request                                                          */
-  /* ------------------------------------------------------------------------ */
-
   useEffect(() => {
     fetchInitialRepository();
 
@@ -769,10 +705,6 @@ export default function Details() {
       requestIdRef.current += 1;
     };
   }, [fetchInitialRepository]);
-
-  /* ------------------------------------------------------------------------ */
-  /* Tab switching                                                            */
-  /* ------------------------------------------------------------------------ */
 
   const handleTabChange = useCallback(
     (tab: TabType) => {
@@ -797,10 +729,6 @@ export default function Details() {
     },
     [currentBranch, fetchReadme],
   );
-
-  /* ------------------------------------------------------------------------ */
-  /* Branch bottom sheet                                                      */
-  /* ------------------------------------------------------------------------ */
 
   const openBranchSheet = useCallback(() => {
     if (branches.length === 0) {
@@ -855,10 +783,6 @@ export default function Details() {
     [currentBranch, activeTab, fetchBranchContents, fetchReadme],
   );
 
-  /* ------------------------------------------------------------------------ */
-  /* Directory navigation                                                     */
-  /* ------------------------------------------------------------------------ */
-
   const handleItemPress = useCallback(
     (item: RepoContentItem) => {
       if (item.type === 'dir') {
@@ -909,10 +833,6 @@ export default function Details() {
     fetchBranchContents(currentBranch, '');
   }, [currentBranch, fetchBranchContents, pathStack.length]);
 
-  /* ------------------------------------------------------------------------ */
-  /* Star                                                                     */
-  /* ------------------------------------------------------------------------ */
-
   const toggleStar = useCallback(async () => {
     if (starLoading) {
       return;
@@ -944,10 +864,6 @@ export default function Details() {
     }
   }, [isStarred, starLoading, owner, repo, showToast]);
 
-  /* ------------------------------------------------------------------------ */
-  /* Share                                                                    */
-  /* ------------------------------------------------------------------------ */
-
   const shareRepo = useCallback(async () => {
     if (!meta) {
       return;
@@ -962,10 +878,6 @@ export default function Details() {
       console.warn('Share error:', error?.message);
     }
   }, [meta, owner, repo]);
-
-  /* ------------------------------------------------------------------------ */
-  /* Header                                                                   */
-  /* ------------------------------------------------------------------------ */
 
   const renderHeader = () => (
     <View style={styles.header}>
@@ -985,10 +897,6 @@ export default function Details() {
       </TouchableOpacity>
     </View>
   );
-
-  /* ------------------------------------------------------------------------ */
-  /* Meta                                                                     */
-  /* ------------------------------------------------------------------------ */
 
   const renderMeta = () => {
     if (initialLoading && !meta) {
@@ -1074,10 +982,6 @@ export default function Details() {
     );
   };
 
-  /* ------------------------------------------------------------------------ */
-  /* Branch Sheet                                                             */
-  /* ------------------------------------------------------------------------ */
-
   const renderBranchSheet = () => (
     <BottomSheetModal
       ref={bottomSheetRef}
@@ -1161,10 +1065,6 @@ export default function Details() {
     </BottomSheetModal>
   );
 
-  /* ------------------------------------------------------------------------ */
-  /* Render                                                                   */
-  /* ------------------------------------------------------------------------ */
-
   return (
     <BottomSheetModalProvider>
       <StatusBar barStyle="dark-content" />
@@ -1186,10 +1086,10 @@ export default function Details() {
 
           {/* Index 2 */}
           <View style={styles.contentArea}>
-            /* * IMPORTANT: * * Only the active tab is mounted. * * The old
-            implementation rendered BOTH Files * and README and then used
-            display:none. * * That is especially expensive when README is large.
-            */
+            {/* IMPORTANT:
+                Only the active tab is mounted.
+                The old implementation rendered BOTH Files and README and then used display:none.
+                That is especially expensive when README is large. */}
             {activeTab === 'Files' ? (
               <FilesTab
                 branches={branches}
@@ -1224,10 +1124,6 @@ export default function Details() {
     </BottomSheetModalProvider>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* Styles                                                                     */
-/* -------------------------------------------------------------------------- */
 
 const styles = StyleSheet.create({
   container: {
