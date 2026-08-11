@@ -218,9 +218,14 @@ export default function Home() {
     const isStarred = starredSet.has(item.full_name);
     return (
       <AnimatedRepoCard index={index}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.repoCard}
-          onPress={() => navigation.navigate('Details', { owner: item.owner?.login, repo: item.name })}
+          onPress={() =>
+            navigation.navigate('Details', {
+              owner: item.owner?.login,
+              repo: item.name,
+            })
+          }
         >
           <View style={styles.repoHeaderRow}>
             <Image
@@ -321,7 +326,7 @@ export default function Home() {
         };
       default:
         return {
-          icon: 'github',
+          icon: 'yin-yang',
           color: '#64748b',
           bg: '#f1f5f9',
           text: 'interacted with',
@@ -363,7 +368,7 @@ export default function Home() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView edges={['top']} style={styles.container}>
       {toastMsg && (
         <Toast
           message={toastMsg.message}
@@ -382,7 +387,12 @@ export default function Home() {
               iconStyle="solid"
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('Inbox');
+            }}
+            style={styles.iconButton}
+          >
             <FontAwesome6 name="bell" size={16} color="#0f172a" />
             <View style={styles.notificationDot} />
           </TouchableOpacity>
@@ -491,11 +501,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f7f7f5',
   },
-  // centerContainer: {
-  //   flex: 1,
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  // },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

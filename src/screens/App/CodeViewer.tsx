@@ -300,7 +300,11 @@ export default function CodeViewer() {
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <View style={styles.titleContainer}>
-            <Text style={styles.filename} numberOfLines={1}>
+            <Text
+              style={styles.filename}
+              ellipsizeMode="tail"
+              numberOfLines={1}
+            >
               {path.split('/').pop()}
             </Text>
             <View style={styles.badge}>
@@ -442,6 +446,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#111827',
+    width: '80%',
   },
   badge: {
     alignSelf: 'flex-start',
