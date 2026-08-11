@@ -7,6 +7,8 @@ import {
   Switch,
   TouchableOpacity,
   Image,
+  Modal,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
@@ -19,25 +21,28 @@ import { storage } from '../../storage/mmkvStorage';
 import * as Keychain from 'react-native-keychain';
 import { logout as logoutAction } from '../../store/slices/authSlice';
 import { Toast } from '../../components/home/Toast';
-import { useNavigation } from '@react-navigation/native';
-// import { useAppSelector } from '../../../store';
-// import { useGitHubAuth } from '../../../auth/useGitHubAuth';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import DeviceInfo from 'react-native-device-info';
 
 export default function Setting() {
   const user = useAppSelector(state => state.auth.user);
   const { logout: authLogout } = useGitHubAuth();
   const dispatch = useAppDispatch();
   const navigation = useNavigation<any>();
-
+  const appVersion = DeviceInfo.getVersion();
   const [prReviews, setPrReviews] = useState(true);
   const [mentions, setMentions] = useState(true);
   const [releases, setReleases] = useState(true);
 
-  // Rate Limit State
-  const [rateLimit, setRateLimit] = useState<{
-    limit: number;
-    remaining: number;
+  // Rate Limit & Usage State
+  const [rateLimitData, setRateLimitData] = useState<{
+    resources: Record<
+      string,
+      { limit: number; used: number; remaining: number; reset: number }
+    >;
+    core: { limit: number; used: number; remaining: number; reset: number };
   } | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   // Cache Size State
   const [cacheSize, setCacheSize] = useState('0 MB');
@@ -45,20 +50,72 @@ export default function Setting() {
   // Toast State
   const [toastVisible, setToastVisible] = useState(false);
 
-  // 1. Fetch Rate Limit
-  useEffect(() => {
-    const fetchRateLimit = async () => {
-      try {
-        const res = await api.get<any>('/rate_limit');
-        if (res?.resources?.core) {
-          setRateLimit(res.resources.core);
-        }
-      } catch (err) {
-        console.warn('Failed to fetch rate limit:', err);
+  // Format epoch seconds reset timestamp
+  const formatResetTime = (resetEpoch: number) => {
+    if (!resetEpoch) return 'N/A';
+    const date = new Date(resetEpoch * 1000);
+    const now = new Date();
+    const diffMins = Math.round((date.getTime() - now.getTime()) / 60000);
+    const timeStr = date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return diffMins > 0 ? `${timeStr} (in ${diffMins}m)` : timeStr;
+  };
+
+  // 1. Fetch Complete Rate Limit Breakdown from GET /rate_limit
+  const fetchRateLimit = React.useCallback(async () => {
+    try {
+      const res = await api.get<any>('/rate_limit', {
+        requireRawResponse: true,
+      });
+      const data = res?.data;
+
+      if (data?.resources) {
+        const parsedResources: Record<
+          string,
+          { limit: number; used: number; remaining: number; reset: number }
+        > = {};
+        Object.keys(data.resources).forEach(key => {
+          const item = data.resources[key];
+          const limit = item?.limit ?? 0;
+          const remaining = item?.remaining ?? 0;
+          const used =
+            item?.used !== undefined
+              ? item.used
+              : Math.max(0, limit - remaining);
+          const reset = item?.reset ?? 0;
+          parsedResources[key] = { limit, used, remaining, reset };
+        });
+
+        const core =
+          parsedResources.core ||
+          (data.rate
+            ? {
+                limit: data.rate.limit ?? 5000,
+                used:
+                  data.rate.used ??
+                  Math.max(
+                    0,
+                    (data.rate.limit ?? 5000) - (data.rate.remaining ?? 5000),
+                  ),
+                remaining: data.rate.remaining ?? 5000,
+                reset: data.rate.reset ?? 0,
+              }
+            : { limit: 5000, used: 0, remaining: 5000, reset: 0 });
+
+        setRateLimitData({ resources: parsedResources, core });
       }
-    };
-    fetchRateLimit();
+    } catch (err) {
+      console.warn('Failed to fetch rate limit:', err);
+    }
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchRateLimit();
+    }, [fetchRateLimit]),
+  );
 
   // 2. Get Storage Size
   const getStorageSize = React.useCallback(() => {
@@ -124,7 +181,7 @@ export default function Setting() {
         </View>
 
         {/* NOTIFICATIONS SECTION */}
-        <Text style={styles.sectionHeader}>NOTIFICATIONS</Text>
+        {/* <Text style={styles.sectionHeader}>NOTIFICATIONS</Text>
         <View style={styles.card}>
           <View style={[styles.row, styles.borderBottom]}>
             <Text style={styles.rowText}>PR reviews</Text>
@@ -153,7 +210,7 @@ export default function Setting() {
               thumbColor="#ffffff"
             />
           </View>
-        </View>
+        </View> */}
 
         {/* STORAGE SECTION */}
         <Text style={styles.sectionHeader}>STORAGE</Text>
@@ -174,26 +231,63 @@ export default function Setting() {
         {/* DEVELOPER SECTION */}
         <Text style={styles.sectionHeader}>DEVELOPER</Text>
         <View style={styles.card}>
-          <View style={styles.apiLimitRow}>
-            <Text style={styles.subText}>API rate limit</Text>
-            <Text style={styles.apiLimitText}>
-              {rateLimit
-                ? `${rateLimit.remaining} / ${rateLimit.limit}`
-                : 'Loading...'}
-            </Text>
-          </View>
-          <View style={styles.progressBarContainer}>
-            <View
-              style={[
-                styles.progressBarFill,
-                {
-                  width: rateLimit
-                    ? `${(rateLimit.remaining / rateLimit.limit) * 100}%`
-                    : '0%',
-                },
-              ]}
-            />
-          </View>
+          <TouchableOpacity
+            style={styles.apiLimitCardButton}
+            activeOpacity={0.7}
+            onPress={() => setModalVisible(true)}
+          >
+            <View style={styles.apiLimitHeader}>
+              <Text style={styles.rowText}>API Usage & Limits</Text>
+              <FontAwesome6
+                name="chevron-right"
+                size={14}
+                color="#64748b"
+                iconStyle="solid"
+              />
+            </View>
+
+            {rateLimitData?.core ? (
+              <>
+                <View style={styles.apiLimitStatsRow}>
+                  <Text style={styles.apiLimitStatText}>
+                    Used:{' '}
+                    <Text style={styles.boldStatText}>
+                      {rateLimitData.core.used}
+                    </Text>
+                  </Text>
+                  <Text style={styles.apiLimitStatText}>
+                    Remaining:{' '}
+                    <Text style={styles.boldStatText}>
+                      {rateLimitData.core.remaining}
+                    </Text>{' '}
+                    / {rateLimitData.core.limit}
+                  </Text>
+                </View>
+                <View style={styles.progressBarContainer}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        width: `${Math.min(
+                          100,
+                          Math.max(
+                            0,
+                            (rateLimitData.core.used /
+                              rateLimitData.core.limit) *
+                              100,
+                          ),
+                        )}%`,
+                      },
+                    ]}
+                  />
+                </View>
+              </>
+            ) : (
+              <Text style={styles.subText}>
+                Tap to view complete rate limit usage
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* ABOUT SECTION */}
@@ -201,7 +295,7 @@ export default function Setting() {
         <View style={styles.card}>
           <View style={[styles.row, styles.borderBottom]}>
             <Text style={styles.rowText}>Version</Text>
-            <Text style={styles.versionText}>2.4.1</Text>
+            <Text style={styles.versionText}>{appVersion}</Text>
           </View>
           <TouchableOpacity style={styles.row} activeOpacity={0.7}>
             <Text style={styles.rowText}>Source on GitHub</Text>
@@ -231,6 +325,116 @@ export default function Setting() {
 
         <View style={styles.bottomPadding} />
       </ScrollView>
+
+      {/* RATE LIMIT BREAKDOWN MODAL */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>GitHub API Usage</Text>
+                <Text style={styles.modalSubtitle}>
+                  Full breakdown by API resource
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setModalVisible(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <FontAwesome6
+                  name="xmark"
+                  size={18}
+                  color="#64748b"
+                  iconStyle="solid"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Modal Scroll Content */}
+            <ScrollView
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {rateLimitData?.resources ? (
+                Object.keys(rateLimitData.resources)
+                  .sort((a, b) => {
+                    if (a === 'core') return -1;
+                    if (b === 'core') return 1;
+                    if (a === 'search') return -1;
+                    if (b === 'search') return 1;
+                    return a.localeCompare(b);
+                  })
+                  .map(resourceName => {
+                    const item = rateLimitData.resources[resourceName];
+                    const pct =
+                      item.limit > 0 ? (item.used / item.limit) * 100 : 0;
+                    const formattedName = resourceName
+                      .split('_')
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join(' ');
+
+                    return (
+                      <View key={resourceName} style={styles.resourceCard}>
+                        <View style={styles.resourceHeader}>
+                          <Text style={styles.resourceTitle}>
+                            {formattedName}
+                          </Text>
+                          <Text style={styles.resourceUsedTag}>
+                            {item.used} / {item.limit} used
+                          </Text>
+                        </View>
+
+                        <View style={styles.modalProgressBarContainer}>
+                          <View
+                            style={[
+                              styles.modalProgressBarFill,
+                              {
+                                width: `${Math.min(100, Math.max(0, pct))}%`,
+                                backgroundColor:
+                                  pct > 80
+                                    ? '#ef4444'
+                                    : pct > 50
+                                    ? '#f59e0b'
+                                    : '#3b82f6',
+                              },
+                            ]}
+                          />
+                        </View>
+
+                        <View style={styles.resourceDetailsRow}>
+                          <Text style={styles.resourceDetailText}>
+                            Remaining:{' '}
+                            <Text style={styles.resourceBold}>
+                              {item.remaining}
+                            </Text>
+                          </Text>
+                          <Text style={styles.resourceDetailText}>
+                            Reset:{' '}
+                            <Text style={styles.resourceBold}>
+                              {formatResetTime(item.reset)}
+                            </Text>
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })
+              ) : (
+                <Text style={styles.loadingText}>
+                  Loading rate limit data...
+                </Text>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {toastVisible && (
         <Toast
           message="Cache cleared successfully"
@@ -360,15 +564,36 @@ const styles = StyleSheet.create({
     height: 6,
     backgroundColor: '#f1f5f9',
     borderRadius: 3,
-    marginHorizontal: 16,
-    marginBottom: 16,
+    marginTop: 6,
     overflow: 'hidden',
   },
   progressBarFill: {
-    width: '96%', // 4823/5000 is approx 96%
     height: '100%',
     backgroundColor: '#10b981',
     borderRadius: 3,
+  },
+  apiLimitCardButton: {
+    padding: 16,
+  },
+  apiLimitHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  apiLimitStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  apiLimitStatText: {
+    fontSize: 13,
+    color: '#64748b',
+  },
+  boldStatText: {
+    fontWeight: '700',
+    color: '#0f172a',
   },
   logoutButton: {
     flexDirection: 'row',
@@ -388,5 +613,105 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 40,
+  },
+  // MODAL STYLES
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '84%',
+    paddingBottom: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalScrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  resourceCard: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  resourceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  resourceTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  resourceUsedTag: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  modalProgressBarContainer: {
+    height: 8,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  modalProgressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  resourceDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  resourceDetailText: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+  resourceBold: {
+    fontWeight: '600',
+    color: '#334155',
+  },
+  loadingText: {
+    textAlign: 'center',
+    color: '#64748b',
+    marginVertical: 24,
+    fontSize: 14,
   },
 });

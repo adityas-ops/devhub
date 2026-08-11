@@ -130,7 +130,7 @@ class ApiClient {
    * Generic request dispatcher
    */
   public async request<T = any>(config: ApiRequestConfig): Promise<T> {
-    return this.instance.request<any, T>(config);
+    return this.instance.request<any, T>(config) as Promise<T>;
   }
 
   /**
