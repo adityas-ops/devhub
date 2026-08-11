@@ -35,6 +35,9 @@ local.properties
 !debug.keystore
 .kotlin/
 
+# add gradle properties as well
+gradle.properties
+
 # node.js
 #
 node_modules/
