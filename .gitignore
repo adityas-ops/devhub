@@ -37,6 +37,7 @@ local.properties
 
 # add gradle properties as well
 gradle.properties
+devhub-upload-key.jks
 
 # node.js
 #
@@ -80,3 +81,8 @@ android/app/src/main/assets/*.bundle
 
 .env
 .env.development
+
+# Android signing keys
+*.jks
+*.keystore
+*.pem
